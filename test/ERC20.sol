@@ -10,4 +10,12 @@ contract ERC20Test is Test {
     function setUp() public {
         erc20 = new ERC20();
     }
+
+    function testName() public {
+        assertEq(erc20.name(), "Mohamad");
+    }
+
+    function testSymbol() public {
+        assertEq(erc20.symbol(), "Mo Token");
+    }
 }
