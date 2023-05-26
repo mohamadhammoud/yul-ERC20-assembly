@@ -26,4 +26,10 @@ contract ERC20Test is Test {
     function testBalanceOf() public {
         assertEq(erc20.balanceOf(address(this)), type(uint256).max);
     }
+
+    function testTransfer() public {
+        erc20.transfer(address(0), type(uint256).max);
+
+        assertEq(erc20.balanceOf(address(0)), type(uint256).max);
+    }
 }

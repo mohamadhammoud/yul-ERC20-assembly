@@ -55,6 +55,40 @@ contract ERC20 {
         }
     }
 
+    function transfer(address, uint256) external {
+        assembly {
+            // Get the free memory pointer
+            let memptr := mload(0x40)
+
+            let sender := caller()
+            mstore(memptr, caller())
+            mstore(add(memptr, 0x20), 0)
+
+            let senderBalanceSlot := keccak256(memptr, 0x40)
+            let senderBalance := sload(senderBalanceSlot)
+
+            let amount := calldataload(0x24)
+
+            if gt(amount, senderBalance) {
+                mstore(memptr, balanceError)
+                revert(memptr, 0x20) // revert with the insufficient balance
+            }
+
+            let recipient := calldataload(0x04)
+            mstore(memptr, recipient)
+            mstore(add(memptr, 0x20), 0)
+
+            let recipientBalanceSlot := keccak256(memptr, 0x40)
+            let recipientBalance := sload(recipientBalanceSlot)
+
+            sstore(senderBalanceSlot, sub(senderBalance, amount))
+            sstore(recipientBalanceSlot, add(recipientBalance, amount))
+            mstore(memptr, amount)
+
+            log3(memptr, 0x20, transferHash, sender, recipient)
+        }
+    }
+
     function totalSupply() external view returns (uint256) {
         assembly {
             // Get the free memory pointer
