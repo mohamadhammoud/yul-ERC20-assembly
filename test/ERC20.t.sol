@@ -22,4 +22,8 @@ contract ERC20Test is Test {
     function testTotalSupply() public {
         assertEq(erc20.totalSupply(), type(uint256).max);
     }
+
+    function testBalanceOf() public {
+        assertEq(erc20.balanceOf(address(this)), type(uint256).max);
+    }
 }

@@ -68,6 +68,25 @@ contract ERC20 {
         }
     }
 
+    function balanceOf(address) external view returns (uint256) {
+        assembly {
+            // Get the free memory pointer
+            let memptr := mload(0x40)
+
+            mstore(memptr, calldataload(0x04))
+
+            let account := mload(memptr)
+
+            mstore(add(memptr, 0x20), 0)
+
+            let slot := keccak256(memptr, 0x40)
+
+            mstore(memptr, sload(slot))
+
+            return(memptr, 0x20)
+        }
+    }
+
     function name() external pure returns (string memory) {
         assembly {
             // Get the free memory pointer
