@@ -37,7 +37,36 @@ contract ERC20 {
     /// The total supply of the token.
     uint internal _totalSupply;
 
-    constructor() {}
+    constructor() {
+        assembly {
+            mstore(0x00, caller())
+
+            mstore(0x20, 0x00)
+
+            let slot := keccak256(0x00, 0x40)
+
+            sstore(slot, not(0))
+
+            sstore(0x02, not(0))
+
+            mstore(0x00, not(0))
+
+            log3(0x00, 0x20, transferHash, 0x00, caller())
+        }
+    }
+
+    function totalSupply() external view returns (uint256) {
+        assembly {
+            // Get the free memory pointer
+            let memptr := mload(0x40)
+
+            let totalSupply := sload(0x02)
+
+            mstore(memptr, totalSupply)
+
+            return(memptr, 0x20)
+        }
+    }
 
     function name() external pure returns (string memory) {
         assembly {
