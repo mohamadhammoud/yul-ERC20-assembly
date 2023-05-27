@@ -36,6 +36,12 @@ contract ERC20Test is Test {
         assertEq(erc20.balanceOf(address(0)), type(uint256).max);
     }
 
+    function testApprove() public {
+        erc20.approve(address(0), 456);
+
+        assertEq(erc20.allowance(address(this), address(0)), 456);
+    }
+
     function testTransferFrom() public {
         vm.expectEmit(true, true, false, true);
         emit Approval(address(this), address(0), 456);

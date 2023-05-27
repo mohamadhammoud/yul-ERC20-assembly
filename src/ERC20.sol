@@ -171,6 +171,33 @@ contract ERC20 {
         }
     }
 
+    function allowance(address, address) external view returns (uint256) {
+        assembly {
+            // Get the free memory pointer
+            let memptr := mload(0x40)
+
+            // Get the the slot
+            let sender := calldataload(0x04)
+            mstore(memptr, sender)
+            mstore(add(memptr, 0x20), 0x01)
+            let senderAndSpenderAllowanceHash := keccak256(memptr, 0x40)
+
+            // Get the injected location in the injected mapping
+            let spender := calldataload(0x24)
+            // keccak256(abi.encode(slot))
+            mstore(memptr, spender)
+            mstore(add(memptr, 0x20), senderAndSpenderAllowanceHash)
+
+            let senderAndSpenderAllowanceSlot := keccak256(memptr, 0x40)
+
+            let amount := sload(senderAndSpenderAllowanceSlot)
+
+            mstore(memptr, amount)
+
+            return(memptr, 0x20)
+        }
+    }
+
     function totalSupply() external view returns (uint256) {
         assembly {
             // Get the free memory pointer
