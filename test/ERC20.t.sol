@@ -7,6 +7,9 @@ import "../src/ERC20.sol";
 contract ERC20Test is Test {
     ERC20 public erc20;
 
+    event Transfer(address indexed from, address indexed to, uint256 amount);
+    event Approval(address indexed from, address indexed to, uint256 amount);
+
     function setUp() public {
         erc20 = new ERC20();
     }
@@ -34,11 +37,15 @@ contract ERC20Test is Test {
     }
 
     function testTransferFrom() public {
-        erc20.approve(address(0), type(uint256).max);
+        vm.expectEmit(true, true, false, true);
+        emit Approval(address(this), address(0), 456);
+        erc20.approve(address(0), 456);
 
+        vm.expectEmit(true, true, false, true);
         vm.prank(address(0));
-        erc20.transferFrom(address(this), address(2), 10);
+        emit Transfer(address(this), address(2), 456);
+        erc20.transferFrom(address(this), address(2), 456);
 
-        assertEq(erc20.balanceOf(address(2)), 10);
+        assertEq(erc20.balanceOf(address(2)), 456);
     }
 }

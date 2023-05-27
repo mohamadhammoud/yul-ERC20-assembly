@@ -133,7 +133,7 @@ contract ERC20 {
             sstore(recipientBalanceSlot, add(recipientBalance, amount))
 
             mstore(memptr, amount)
-            log3(memptr, 0x20, transferHash, sender, spender)
+            log3(memptr, 0x20, transferHash, sender, recipient)
         }
     }
 
