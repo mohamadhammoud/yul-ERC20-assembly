@@ -82,6 +82,61 @@ contract ERC20 {
         }
     }
 
+    function transferFrom(address, address, uint256) external {
+        assembly {
+            // Get the free memory pointer
+            let memptr := mload(0x40)
+
+            let sender := calldataload(0x04)
+
+            // Get the the slot
+            mstore(memptr, sender)
+            mstore(add(memptr, 0x20), 0x01)
+            let senderAndSpenderAllowanceHash := keccak256(memptr, 0x40)
+
+            // Get the injected location in the injected mapping
+            let spender := caller()
+            // keccak256(abi.encode(slot))
+            mstore(memptr, spender)
+            mstore(add(memptr, 0x20), senderAndSpenderAllowanceHash)
+
+            let senderAndSpenderAllowanceSlot := keccak256(memptr, 0x40)
+
+            let allowanceAmount := sload(senderAndSpenderAllowanceSlot)
+
+            let amount := calldataload(0x44)
+
+            if lt(allowanceAmount, amount) {
+                mstore(memptr, allowanceError)
+                revert(memptr, 0x20) // revert with the insufficient balance
+            }
+
+            sstore(senderAndSpenderAllowanceSlot, sub(allowanceAmount, amount))
+
+            mstore(memptr, sender)
+            mstore(add(memptr, 0x20), 0)
+            let senderBalanceSlot := keccak256(memptr, 0x40)
+            let senderBalance := sload(senderBalanceSlot)
+
+            if gt(amount, senderBalance) {
+                mstore(memptr, balanceError)
+                revert(memptr, 0x20) // revert with the insufficient balance
+            }
+
+            sstore(senderBalanceSlot, sub(senderBalance, amount))
+
+            let recipient := calldataload(0x24)
+            mstore(memptr, recipient)
+            mstore(add(memptr, 0x20), 0)
+            let recipientBalanceSlot := keccak256(memptr, 0x40)
+            let recipientBalance := sload(recipientBalanceSlot)
+            sstore(recipientBalanceSlot, add(recipientBalance, amount))
+
+            mstore(memptr, amount)
+            log3(memptr, 0x20, transferHash, sender, spender)
+        }
+    }
+
     function transfer(address, uint256) external {
         assembly {
             // Get the free memory pointer
