@@ -64,18 +64,18 @@ contract ERC20 {
             let sender := caller()
             mstore(memptr, sender)
             mstore(add(memptr, 0x20), 0x01)
-            let senderAndSpenderAllowanceHash := keccak256(memptr, 0x40)
+            let innerHash := keccak256(memptr, 0x40)
 
             // Get the injected location in the injected mapping
             let spender := calldataload(0x04)
             // keccak256(abi.encode(slot))
             mstore(memptr, spender)
-            mstore(add(memptr, 0x20), senderAndSpenderAllowanceHash)
+            mstore(add(memptr, 0x20), innerHash)
 
-            let senderAndSpenderAllowanceSlot := keccak256(memptr, 0x40)
+            let locationSlot := keccak256(memptr, 0x40)
 
             let amount := calldataload(0x24)
-            sstore(senderAndSpenderAllowanceSlot, amount)
+            sstore(locationSlot, amount)
             mstore(memptr, amount)
 
             log3(memptr, 0x20, approvalHash, sender, spender)
@@ -92,17 +92,17 @@ contract ERC20 {
             // Get the the slot
             mstore(memptr, sender)
             mstore(add(memptr, 0x20), 0x01)
-            let senderAndSpenderAllowanceHash := keccak256(memptr, 0x40)
+            let innerHash := keccak256(memptr, 0x40)
 
             // Get the injected location in the injected mapping
             let spender := caller()
             // keccak256(abi.encode(slot))
             mstore(memptr, spender)
-            mstore(add(memptr, 0x20), senderAndSpenderAllowanceHash)
+            mstore(add(memptr, 0x20), innerHash)
 
-            let senderAndSpenderAllowanceSlot := keccak256(memptr, 0x40)
+            let locationSlot := keccak256(memptr, 0x40)
 
-            let allowanceAmount := sload(senderAndSpenderAllowanceSlot)
+            let allowanceAmount := sload(locationSlot)
 
             let amount := calldataload(0x44)
 
@@ -111,7 +111,7 @@ contract ERC20 {
                 revert(memptr, 0x20) // revert with the insufficient balance
             }
 
-            sstore(senderAndSpenderAllowanceSlot, sub(allowanceAmount, amount))
+            sstore(locationSlot, sub(allowanceAmount, amount))
 
             mstore(memptr, sender)
             mstore(add(memptr, 0x20), 0)
@@ -180,17 +180,17 @@ contract ERC20 {
             let sender := calldataload(0x04)
             mstore(memptr, sender)
             mstore(add(memptr, 0x20), 0x01)
-            let senderAndSpenderAllowanceHash := keccak256(memptr, 0x40)
+            let innerHash := keccak256(memptr, 0x40)
 
             // Get the injected location in the injected mapping
             let spender := calldataload(0x24)
             // keccak256(abi.encode(slot))
             mstore(memptr, spender)
-            mstore(add(memptr, 0x20), senderAndSpenderAllowanceHash)
+            mstore(add(memptr, 0x20), innerHash)
 
-            let senderAndSpenderAllowanceSlot := keccak256(memptr, 0x40)
+            let locationSlot := keccak256(memptr, 0x40)
 
-            let amount := sload(senderAndSpenderAllowanceSlot)
+            let amount := sload(locationSlot)
 
             mstore(memptr, amount)
 
