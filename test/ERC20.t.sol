@@ -54,4 +54,17 @@ contract ERC20Test is Test {
 
         assertEq(erc20.balanceOf(address(2)), 456);
     }
+
+    function testFailTransfer() public {
+        vm.prank(address(0));
+
+        erc20.transfer(address(2), 1000);
+    }
+
+    function testFailTransferFrom() public {
+        erc20.approve(address(0), 456);
+
+        vm.prank(address(0));
+        erc20.transferFrom(address(this), address(2), 1000);
+    }
 }
