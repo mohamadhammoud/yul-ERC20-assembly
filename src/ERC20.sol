@@ -32,7 +32,7 @@ contract ERC20 {
     mapping(address => uint256) internal _balances;
 
     /// Mapping to store token allowances for each pair of owner and spender addresses.
-    mapping(address => uint256) internal _allowances;
+    mapping(address => mapping(address => uint256)) internal allowances;
 
     /// The total supply of the token.
     uint internal _totalSupply;
@@ -52,6 +52,33 @@ contract ERC20 {
             mstore(0x00, not(0))
 
             log3(0x00, 0x20, transferHash, 0x00, caller())
+        }
+    }
+
+    function approve(address, uint256) external {
+        assembly {
+            // Get the free memory pointer
+            let memptr := mload(0x40)
+
+            // Get the the slot
+            let sender := caller()
+            mstore(memptr, sender)
+            mstore(add(memptr, 0x20), 0x01)
+            let senderAndSpenderAllowanceHash := keccak256(memptr, 0x40)
+
+            // Get the injected location in the injected mapping
+            let spender := calldataload(0x04)
+            // keccak256(abi.encode(slot))
+            mstore(memptr, spender)
+            mstore(add(memptr, 0x20), senderAndSpenderAllowanceHash)
+
+            let senderAndSpenderAllowanceSlot := keccak256(memptr, 0x40)
+
+            let amount := calldataload(0x24)
+            sstore(senderAndSpenderAllowanceSlot, amount)
+            mstore(memptr, amount)
+
+            log3(memptr, 0x20, approvalHash, sender, spender)
         }
     }
 
