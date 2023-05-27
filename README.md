@@ -2,7 +2,7 @@
 [![Yul](https://img.shields.io/badge/-Yul-9cf)](https://solidity.readthedocs.io/en/latest/yul.html)
 [![Assembly](https://img.shields.io/badge/-Assembly-orange)](https://en.wikipedia.org/wiki/Assembly_language)
 [![Foundry](https://img.shields.io/badge/Foundry-yellow)](https://example.com/foundry)
-[![Twitter: @HammoudMohamadk]](https://twitter.com/HammoudMohamadk)
+[![Twitter: @HammoudMohamadk](https://img.shields.io/twitter/follow/HammoudMohamadk.svg?style=social)](https://twitter.com/HammoudMohamadk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 # Yul-ERC20-Assembly :fire: :rocket:
