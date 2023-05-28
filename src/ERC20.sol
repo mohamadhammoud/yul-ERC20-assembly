@@ -37,30 +37,37 @@ contract ERC20 {
     /// The total supply of the token.
     uint internal _totalSupply;
 
+    /// @notice Constructor initializes the contract, setting the initial balance for the deployer.
     constructor() {
         assembly {
+            // Store the initial balance for the deployer (caller) in the balances mapping
             mstore(0x00, caller())
-
             mstore(0x20, 0x00)
-
             let slot := keccak256(0x00, 0x40)
 
+            // Set the balance of caller to the maximum possible value (not(0))
             sstore(slot, not(0))
 
+            // Set the total supply to the maximum possible value (not(0))
             sstore(0x02, not(0))
 
+            // Emit Transfer event for the initial token distribution
             mstore(0x00, not(0))
-
             log3(0x00, 0x20, transferHash, 0x00, caller())
         }
     }
 
-    function approve(address, uint256) external {
+    /// @notice Approves `spender` to spend `amount` tokens on behalf of the `caller()`.
+    // @param spender The address of the spender who is allowed to spend tokens on behalf of the caller.
+    // @param amount The number of tokens that the spender is allowed to spend.
+    /// @return A boolean value indicating whether the operation succeeded.
+    function approve(address, uint256) external returns (bool) {
         assembly {
             // Get the free memory pointer
             let memptr := mload(0x40)
 
             // Get the the slot
+            // Calculate allowance inner hash slot for sender
             let sender := caller()
             mstore(memptr, sender)
             mstore(add(memptr, 0x20), 0x01)
@@ -68,21 +75,33 @@ contract ERC20 {
 
             // Get the injected location in the injected mapping
             let spender := calldataload(0x04)
-            // keccak256(abi.encode(slot))
+            // keccak256(slot)
             mstore(memptr, spender)
             mstore(add(memptr, 0x20), innerHash)
 
             let locationSlot := keccak256(memptr, 0x40)
 
             let amount := calldataload(0x24)
-            sstore(locationSlot, amount)
-            mstore(memptr, amount)
 
+            // Update allowance value
+            sstore(locationSlot, amount)
+
+            // Emit Approval event
+            mstore(memptr, amount)
             log3(memptr, 0x20, approvalHash, sender, spender)
+
+            // Set return value to true (success) and return
+            mstore(0x00, 0x01)
+            return(0x00, 0x20)
         }
     }
 
-    function transferFrom(address, address, uint256) external {
+    /// @notice Transfers `amount` tokens from `sender` to `receiver` on behalf of the `caller()`.
+    // @param  The address of the token holder.
+    // @param  The address of the token recipient.
+    // @param  The number of tokens to transfer.
+    /// @return A boolean value indicating whether the operation succeeded.
+    function transferFrom(address, address, uint256) external returns (bool) {
         assembly {
             // Get the free memory pointer
             let memptr := mload(0x40)
@@ -90,22 +109,25 @@ contract ERC20 {
             let sender := calldataload(0x04)
 
             // Get the the slot
+            // Calculate allowance inner hash slot for sender
             mstore(memptr, sender)
             mstore(add(memptr, 0x20), 0x01)
             let innerHash := keccak256(memptr, 0x40)
 
             // Get the injected location in the injected mapping
             let spender := caller()
-            // keccak256(abi.encode(slot))
+            // keccak256(slot)
             mstore(memptr, spender)
             mstore(add(memptr, 0x20), innerHash)
 
             let locationSlot := keccak256(memptr, 0x40)
 
+            // Load allowance value
             let allowanceAmount := sload(locationSlot)
 
             let amount := calldataload(0x44)
 
+            // Check if allowance is sufficient
             if lt(allowanceAmount, amount) {
                 mstore(memptr, allowanceError)
                 revert(memptr, 0x20) // revert with the insufficient balance
@@ -113,42 +135,67 @@ contract ERC20 {
 
             sstore(locationSlot, sub(allowanceAmount, amount))
 
+            // Calculate sender's balance storage slot
             mstore(memptr, sender)
             mstore(add(memptr, 0x20), 0)
             let senderBalanceSlot := keccak256(memptr, 0x40)
+
+            // Load sender's balance
             let senderBalance := sload(senderBalanceSlot)
 
+            // Check if sender's balance is sufficient
             if gt(amount, senderBalance) {
                 mstore(memptr, balanceError)
                 revert(memptr, 0x20) // revert with the insufficient balance
             }
 
+            // Update sender's balance
             sstore(senderBalanceSlot, sub(senderBalance, amount))
 
+            // Calculate receiver's balance storage slot
             let recipient := calldataload(0x24)
             mstore(memptr, recipient)
             mstore(add(memptr, 0x20), 0)
             let recipientBalanceSlot := keccak256(memptr, 0x40)
+
+            // Load receiver's balance
             let recipientBalance := sload(recipientBalanceSlot)
+
+            // Update receiver's balance
             sstore(recipientBalanceSlot, add(recipientBalance, amount))
 
+            // Emit Transfer event
             mstore(memptr, amount)
             log3(memptr, 0x20, transferHash, sender, recipient)
+
+            // Set return value to true (success) and return
+            mstore(0x00, 0x01)
+            return(0x00, 0x20)
         }
     }
 
-    function transfer(address, uint256) external {
+    /// @notice Transfers tokens from the caller to the specified address.
+    /// @return A boolean indicating whether the transfer was successful.
+    function transfer(address, uint256) external returns (bool) {
         assembly {
             // Get the free memory pointer
             let memptr := mload(0x40)
 
             let sender := caller()
+
+            // Store the caller's address in memory
             mstore(memptr, caller())
+
+            // Set the second memory word to zero
             mstore(add(memptr, 0x20), 0)
 
+            // Calculate the storage slot for the caller's (sender) balance
             let senderBalanceSlot := keccak256(memptr, 0x40)
+
+            // Load the caller's balance from storage
             let senderBalance := sload(senderBalanceSlot)
 
+            // Load the input transfer amount
             let amount := calldataload(0x24)
 
             if gt(amount, senderBalance) {
@@ -157,17 +204,31 @@ contract ERC20 {
             }
 
             let recipient := calldataload(0x04)
+            // Store the recipient address in memory
             mstore(memptr, recipient)
+
+            // Set the second memory word to zero (balance slot)
             mstore(add(memptr, 0x20), 0)
 
+            // Calculate the storage slot for the recipient's balance
             let recipientBalanceSlot := keccak256(memptr, 0x40)
+
             let recipientBalance := sload(recipientBalanceSlot)
 
+            // Store the new sender balance
             sstore(senderBalanceSlot, sub(senderBalance, amount))
+
+            // Store the new recipient balance
             sstore(recipientBalanceSlot, add(recipientBalance, amount))
+
+            // Store the transfer amount in memory
             mstore(memptr, amount)
 
             log3(memptr, 0x20, transferHash, sender, recipient)
+
+            // Set return value to true (success) and return
+            mstore(0x00, 0x01)
+            return(0x00, 0x20)
         }
     }
 
@@ -176,60 +237,80 @@ contract ERC20 {
             // Get the free memory pointer
             let memptr := mload(0x40)
 
-            // Get the the slot
+            // Get the inner hash
+            // Load the sender address into memory at position memptr
             let sender := calldataload(0x04)
             mstore(memptr, sender)
+            // Load the constant value 0x01 (slot 1) into memory at position add(memptr, 0x20)
             mstore(add(memptr, 0x20), 0x01)
+            // Compute the inner hash by hashing the memory contents at positions memptr and add(memptr, 0x20) (64 bytes)
             let innerHash := keccak256(memptr, 0x40)
 
             // Get the injected location in the injected mapping
             let spender := calldataload(0x24)
-            // keccak256(abi.encode(slot))
+            // Load the spender address into memory at position memptr
             mstore(memptr, spender)
+            // Load the inner hash into memory at position add(memptr, 0x20)
             mstore(add(memptr, 0x20), innerHash)
-
+            // keccak256(slot)
             let locationSlot := keccak256(memptr, 0x40)
 
+            // Load the allowance value from the computed storage slot
             let amount := sload(locationSlot)
 
+            // Store the allowance value in memory at position memptr
             mstore(memptr, amount)
 
+            // Return the allowance value stored in memory at position memptr
+            // The second argument, 0x20, specifies the size of the returned data (32 bytes)
             return(memptr, 0x20)
         }
     }
 
+    /// @notice Returns the total supply of tokens.
+    /// @return The total supply of tokens.
     function totalSupply() external view returns (uint256) {
         assembly {
             // Get the free memory pointer
             let memptr := mload(0x40)
 
+            // Load the value stored at storage slot 0x02
             let totalSupply := sload(0x02)
 
+            // store total supply into memory at position memptr
             mstore(memptr, totalSupply)
 
+            // Return the value stored in memory at position memptr
+            // The second argument, 0x20, specifies the size of the returned data (32 bytes)
             return(memptr, 0x20)
         }
     }
 
+    /// @notice Returns the balance of the given address.
+    /// @return The balance of the given address as a uint256.
     function balanceOf(address) external view returns (uint256) {
         assembly {
             // Get the free memory pointer
             let memptr := mload(0x40)
 
+            // Load the input address into memory
             mstore(memptr, calldataload(0x04))
-
             let account := mload(memptr)
 
+            // Set the second memory word to zero
             mstore(add(memptr, 0x20), 0)
 
+            // Load the balance from storage using the hash of slot and the input address
             let slot := keccak256(memptr, 0x40)
-
             mstore(memptr, sload(slot))
 
+            // Return the memory containing the balance
             return(memptr, 0x20)
         }
     }
 
+    /// @notice Returns the name of the token.
+    /// @return The name of the token as a string.
     function name() external pure returns (string memory) {
         assembly {
             // Get the free memory pointer
@@ -248,6 +329,8 @@ contract ERC20 {
         }
     }
 
+    /// @notice Returns the symbol of the token.
+    /// @return The symbol of the token as a string.
     function symbol() external pure returns (string memory) {
         assembly {
             // Get the free memory pointer
