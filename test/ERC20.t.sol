@@ -22,6 +22,10 @@ contract ERC20Test is Test {
         assertEq(erc20.symbol(), "Mo Token");
     }
 
+    function testDecimals() public {
+        assertEq(erc20.decimals(), 18);
+    }
+
     function testTotalSupply() public {
         assertEq(erc20.totalSupply(), type(uint256).max);
     }

@@ -265,4 +265,15 @@ contract ERC20 {
             return(memptr, 0x60)
         }
     }
+
+    /// @notice Returns the number of decimals for the token.
+    /// @return The number of decimals as a uint8.
+    function decimals() external pure returns (uint8) {
+        assembly {
+            // Store the number of decimals
+            mstore(0, 18)
+            // Return the memory containing the decimals value
+            return(0x00, 0x20)
+        }
+    }
 }
